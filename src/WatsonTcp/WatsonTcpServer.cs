@@ -1035,16 +1035,27 @@
                                     else
                                     {
                                         _Settings.Logger?.Invoke(Severity.Warn, _Header + "declined authentication for " + client.ToString());
-                                        await DisconnectClientAsync(client.Guid, MessageStatus.AuthFailure, false, token).ConfigureAwait(false);
+                                        _Events.HandleAuthenticationFailed(this, new AuthenticationFailedEventArgs(client.IpPort));
+                                        await DisconnectClientAsync(client.Guid, MessageStatus.AuthFailure, true, token).ConfigureAwait(false);
                                         break;
                                     }
                                 }
+                                else
+                                {
+                                    // AuthRequested message with no pre-shared key - decline and terminate
+                                    _Settings.Logger?.Invoke(Severity.Warn, _Header + "no authentication material for " + client.ToString());
+                                    _Events.HandleAuthenticationFailed(this, new AuthenticationFailedEventArgs(client.IpPort));
+                                    await DisconnectClientAsync(client.Guid, MessageStatus.AuthFailure, true, token).ConfigureAwait(false);
+                                    break;
+                                }
                             }
-
-                            // decline and terminate
-                            _Settings.Logger?.Invoke(Severity.Warn, _Header + "no authentication material for " + client.ToString());
-                            await DisconnectClientAsync(client.Guid, MessageStatus.AuthFailure, false, token).ConfigureAwait(false);
-                            break;
+                            else
+                            {
+                                // Non-auth message from unauthenticated client - ignore and wait for auth
+                                _Settings.Logger?.Invoke(Severity.Debug, _Header + "ignoring message from unauthenticated client " + client.ToString() + " (waiting for authentication)");
+                                await Task.Delay(30, token).ConfigureAwait(false);
+                                continue;
+                            }
                         }
                     }
 

@@ -55,7 +55,7 @@
 
                 _Server.Callbacks.SyncRequestReceivedAsync = SyncRequestReceived;
                 
-                _Server.Settings.IdleClientTimeoutSeconds = 10;
+                // _Server.Settings.IdleClientTimeoutSeconds = 10;
                 // _Server.Settings.PresharedKey = "0000000000000000";
                 _Server.Settings.Logger = Logger;
                 _Server.Settings.DebugMessages = _DebugMessages;

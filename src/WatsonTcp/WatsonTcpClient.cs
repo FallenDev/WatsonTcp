@@ -804,6 +804,15 @@
                     {
                         _Settings.Logger?.Invoke(Severity.Debug, _Header + "authentication successful");
                         Task unawaited = Task.Run(() => _Events.HandleAuthenticationSucceeded(this, EventArgs.Empty), token);
+
+                        // After successful authentication, send RegisterClient message
+                        // This is necessary because the initial RegisterClient sent during Connect()
+                        // was blocked by the server while the client was unauthenticated
+                        _Settings.Logger?.Invoke(Severity.Debug, _Header + "registering client");
+                        WatsonMessage registerMsg = new WatsonMessage();
+                        registerMsg.Status = MessageStatus.RegisterClient;
+                        await SendInternalAsync(registerMsg, 0, null, token).ConfigureAwait(false);
+
                         continue;
                     }
                     else if (msg.Status == MessageStatus.AuthFailure)
@@ -816,8 +825,35 @@
                     else if (msg.Status == MessageStatus.AuthRequired)
                     {
                         _Settings.Logger?.Invoke(Severity.Info, _Header + "authentication required by server; please authenticate using pre-shared key");
-                        string psk = _Callbacks.HandleAuthenticationRequested();
-                        if (!String.IsNullOrEmpty(psk)) await AuthenticateAsync(psk, token);
+
+                        string psk = null;
+
+                        // First check if pre-shared key is set in settings
+                        if (!String.IsNullOrEmpty(_Settings.PresharedKey))
+                        {
+                            psk = _Settings.PresharedKey;
+                            _Settings.Logger?.Invoke(Severity.Debug, _Header + "using pre-shared key from settings");
+                        }
+                        // Otherwise, call the callback if available
+                        else
+                        {
+                            psk = _Callbacks.HandleAuthenticationRequested();
+                            if (!String.IsNullOrEmpty(psk))
+                            {
+                                _Settings.Logger?.Invoke(Severity.Debug, _Header + "using pre-shared key from callback");
+                            }
+                        }
+
+                        if (!String.IsNullOrEmpty(psk))
+                        {
+                            await AuthenticateAsync(psk, token);
+                        }
+                        else
+                        {
+                            // No pre-shared key available - neither in settings nor from callback
+                            _Settings.Logger?.Invoke(Severity.Error, _Header + "authentication required by server but no pre-shared key available");
+                            throw new InvalidOperationException("Server requires authentication but no pre-shared key is configured. Set Settings.PresharedKey or implement Callbacks.AuthenticationRequested.");
+                        }
                         continue;
                     }
 
