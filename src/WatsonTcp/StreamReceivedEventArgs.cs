@@ -88,6 +88,22 @@
         private byte[] ReadFromStream(Stream stream, long count)
         {
             if (count <= 0) return Array.Empty<byte>();
+
+#if NET7_0_OR_GREATER
+            MemoryStream ms = new MemoryStream();
+            byte[] buffer = new byte[_BufferSize];
+            long bytesRemaining = count;
+
+            while (bytesRemaining > 0)
+            {
+                int toRead = (int)Math.Min(_BufferSize, bytesRemaining);
+                stream.ReadExactly(buffer, 0, toRead);
+                ms.Write(buffer, 0, toRead);
+                bytesRemaining -= toRead;
+            }
+
+            return ms.ToArray();
+#else
             byte[] buffer = new byte[_BufferSize];
 
             int read = 0;
@@ -112,6 +128,7 @@
 
             byte[] data = ms.ToArray();
             return data;
+#endif
         }
 
         #endregion

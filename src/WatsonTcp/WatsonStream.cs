@@ -118,11 +118,15 @@
                 if (_BytesRemaining == 0) return 0;
 
                 if (count > _BytesRemaining) temp = new byte[_BytesRemaining];
-                else temp = new byte[count]; 
+                else temp = new byte[count];
 
+                // Stream.Read() may return fewer bytes than requested - this is expected behavior
+                // for Stream implementations. Callers must loop to read all desired bytes.
+#pragma warning disable CA2022 // Avoid inexact read
                 int bytesRead = _Stream.Read(temp, 0, temp.Length);
-                Buffer.BlockCopy(temp, 0, buffer, offset, bytesRead); 
-                _Position += bytesRead; 
+#pragma warning restore CA2022
+                Buffer.BlockCopy(temp, 0, buffer, offset, bytesRead);
+                _Position += bytesRead;
 
                 return bytesRead;
 

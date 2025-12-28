@@ -271,14 +271,27 @@
             }
 
             _SslCertificate = null;
+            X509KeyStorageFlags keyStorageFlags = X509KeyStorageFlags.Exportable;
+
+#if NET5_0_OR_GREATER
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                keyStorageFlags = X509KeyStorageFlags.EphemeralKeySet;
+            }
+#endif
+
+#if NET9_0_OR_GREATER
+            _SslCertificate = X509CertificateLoader.LoadPkcs12FromFile(pfxCertFile, pfxCertPass, keyStorageFlags);
+#else
             if (String.IsNullOrEmpty(pfxCertPass))
             {
-                _SslCertificate = new X509Certificate2(pfxCertFile);
+                _SslCertificate = new X509Certificate2(pfxCertFile, (string)null, keyStorageFlags);
             }
             else
             {
-                _SslCertificate = new X509Certificate2(pfxCertFile, pfxCertPass);
+                _SslCertificate = new X509Certificate2(pfxCertFile, pfxCertPass, keyStorageFlags);
             }
+#endif
 
             _ListenerPort = listenerPort;
 

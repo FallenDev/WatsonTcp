@@ -1053,7 +1053,7 @@ namespace Test.Automated
                 {
                     receivedLength = e.ContentLength;
                     byte[] buffer = new byte[e.ContentLength];
-                    e.DataStream.Read(buffer, 0, (int)e.ContentLength);
+                    _ = e.DataStream.Read(buffer, 0, (int)e.ContentLength);
                     streamReceived.Set();
                 };
                 server.Start();
