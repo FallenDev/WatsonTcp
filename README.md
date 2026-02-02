@@ -1,4 +1,4 @@
-![alt tag](https://github.com/jchristn/watsontcp/blob/master/assets/watson.ico)
+![alt tag](https://github.com/jchristn/watsontcp/blob/main/assets/watson.ico)
 
 # WatsonTcp
 
